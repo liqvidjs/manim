@@ -1,0 +1,38 @@
+{
+  "name": "@liqvid/manim",
+  "version": "0.0.1",
+  "description": "Liqvid port of ManimCE",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/*"
+      ]
+    }
+  },
+  "files": [
+    "dist/*"
+  ],
+  "author": "Yuri Sulyma <yuri@liqvidjs.org>",
+  "license": "MIT",
+  "private": false,
+  "dependencies": {
+    "@liqvid/cli": "^1.0.2",
+    "@liqvid/keymap": "^1.0.0",
+    "@liqvid/playback": "^1.0.0",
+    "@liqvid/utils": "^1.0.0",
+    "@react-three/fiber": "^7.0.24",
+    "liqvid": "^2.0.10",
+    "react": "^17.0.2",
+    "rp-katex": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/react": "^17.0.38",
+    "@typescript-eslint/eslint-plugin": "^5.9.1",
+    "@typescript-eslint/parser": "^5.9.1",
+    "eslint": "^8.7.0",
+    "eslint-plugin-react": "^7.28.0"
+  }
+}
