@@ -1,0 +1,13 @@
+.rp-canvas {
+  background: #ece6e2;
+}
+
+.manim-scene {
+  height: 100%;
+  width: 100%;
+}
+
+.manim-scene > svg {
+  height: 100%;
+  width: 100%;
+}
