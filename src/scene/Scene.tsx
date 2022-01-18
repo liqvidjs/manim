@@ -26,10 +26,10 @@ interface Props {
  * that should be ran before a Scene is rendered, use {@link Scene.setup} instead.
  */
 export class Scene extends PureComponent {
-  /**
-   * Canvas element used for rendering.
-   */
   canvas: HTMLCanvasElement;
+  div: HTMLDivElement;
+  svg: SVGSVGElement;
+  
   mobjects: Mobject[];
 
   constructor(props: Props = {}) {
@@ -39,6 +39,9 @@ export class Scene extends PureComponent {
   }
 
   componentDidMount() {
+    for (const mob of this.mobjects) {
+      mob.$render({canvas: this.canvas, div: this.div, svg: this.svg});
+    }
   }
 
   /**
@@ -54,10 +57,10 @@ export class Scene extends PureComponent {
 
   render() {
     return (
-      <div className="manim-scene">
-        <svg viewBox="-5 -5 10 10">
-          {this.mobjects.map(m => m.render())}
-        </svg>
+      <div className="manim-scene" ref={ref => this.div = ref}>
+        <svg viewBox="-5 -5 10 10" ref={ref => this.svg = ref}/>
+        {/*<canvas ref={ref => this.canvas = ref}/>*/}
+        {this.props.children}
       </div>
     );
   }

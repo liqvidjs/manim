@@ -1,10 +1,17 @@
+import {DEFAULT_STROKE_WIDTH} from "../../constants";
 import {Mobject} from "../mobject";
 
 /**
  * A vectorized mobject.
  */
 export class VMobject extends Mobject {
+  strokeWidth: number;
 
+  constructor(...kwargs: ConstructorParameters<typeof Mobject>) {
+    super(...kwargs);
+
+    this.strokeWidth = DEFAULT_STROKE_WIDTH;
+  }
 }
 
 /**
@@ -32,7 +39,9 @@ export class VGroup extends VMobject {
     return super.add(...vmobjects);
   }
 
-  render() {
-    return this.submobjects.map(m => m.render());
+  $render(targets: Parameters<Mobject["$render"]>[0]) {
+    for (const mob of this.submobjects) {
+      mob.$render(targets);
+    }
   }
 }

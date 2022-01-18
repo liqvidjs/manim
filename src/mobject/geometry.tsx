@@ -1,10 +1,12 @@
+import {DEFAULT_DOT_RADIUS, ORIGIN, TWOPI} from "../constants";
+import {WHITE} from "../utils/color";
+import {Pt3} from "../utils/js";
+import {Mobject} from "./mobject";
 import {VMobject} from "./types/vectorized_mobject";
-import {BLUE, RED, WHITE} from "../utils/color";
-import {TWOPI, ORIGIN} from "../constants";
 
 export class TipableVMobject extends VMobject {
-  constructor() {
-    super();
+  constructor(...kwargs: ConstructorParameters<typeof VMobject>) {
+    super(...kwargs);
   }
 }
 
@@ -13,7 +15,7 @@ export class TipableVMobject extends VMobject {
  */
 export class Arc extends TipableVMobject {
   angle: number;
-  arcCenter: number[];
+  arcCenter: Pt3;
   radius: number;
   startAngle: number;
 
@@ -21,15 +23,47 @@ export class Arc extends TipableVMobject {
     angle = TWOPI/4,
     arcCenter = ORIGIN,
     radius = 1,
-    startAngle = 0
-  }) {
-    super();
+    startAngle = 0,
+    ...kwargs
+  }: {
+    angle?: number;
+    arcCenter?: Pt3;
+    radius?: number;
+    startAngle?: number;
+  } & ConstructorParameters<typeof VMobject>[0] = {}) {
+    super(kwargs, {radius, arcCenter, startAngle, angle});
+      // this.num_components = num_components;
+  }
 
-    this.radius = radius;
-    // this.num_components = num_components;
-    this.arcCenter = arcCenter;
-    this.startAngle = startAngle;
-    this.angle = angle;
+  generatePoints() {
+    this.setPrePositionedPoints();
+    // this.scale(this.radius);
+    // this.shift(this.arcCenter);
+  }
+
+  setPrePositionedPoints() {
+    this.points = [this.arcCenter];
+    // anchors = np.array(
+    //     [
+    //         np.cos(a) * RIGHT + np.sin(a) * UP
+    //         for a in np.linspace(
+    //             self.start_angle,
+    //             self.start_angle + self.angle,
+    //             self.num_components,
+    //         )
+    //     ],
+    // )
+    // # Figure out which control points will give the
+    // # Appropriate tangent lines to the circle
+    // d_theta = self.angle / (self.num_components - 1.0)
+    // tangent_vectors = np.zeros(anchors.shape)
+    // # Rotate all 90 degrees, via (x, y) -> (-y, x)
+    // tangent_vectors[:, 1] = anchors[:, 0]
+    // tangent_vectors[:, 0] = -anchors[:, 1]
+    // # Use tangent vectors to deduce anchors
+    // handles1 = anchors[:-1] + (d_theta / 3) * tangent_vectors[:-1]
+    // handles2 = anchors[1:] - (d_theta / 3) * tangent_vectors[1:]
+    // self.set_anchors_and_handles(anchors[:-1], handles1, handles2, anchors[1:])
   }
 }
 
@@ -37,15 +71,76 @@ export class Arc extends TipableVMobject {
  * A circle.
  */
 export class Circle extends Arc {
-  color: string;
-
-  constructor({color = RED}) {
-    super({});
-    this.color = color;
+  constructor(...kwargs: ConstructorParameters<typeof Arc>) {
+    super(...kwargs);
   }
 
-  render() {
-    return (<circle key={this.key} cx={this.points[0]} cy={-this.points[1]} r={1} fill={this.color}/>);
+  $render({svg}: {svg: SVGSVGElement}) {
+    const circle = document.createElementNS(svg.namespaceURI, "circle") as SVGCircleElement;
+    circle.setAttribute("cx", String(this.arcCenter[0]));
+    circle.setAttribute("cy", String(-this.arcCenter[1]));
+    circle.setAttribute("r", String(this.radius));
+    circle.setAttribute("fill", this.color);
+
+    svg.appendChild(circle);
+  }
+}
+
+/**
+ * A circle with a very small radius.
+ */
+export class Dot extends Circle {
+  constructor({
+    color = WHITE,
+    // fillOpacity = 1,
+    point = ORIGIN,
+    radius = DEFAULT_DOT_RADIUS,
+    // strokeWidth = 0
+  }: {
+    /** The color of the dot. */
+    color?: string;
+
+    /** The opacity of the dot's fill colour. */
+    fillOpacity?: number;
+
+    /** The location of the dot. */
+    point?: Pt3;
+
+    /** The radius of the dot. */
+    radius?: number;
+
+    /** The thickness of the outline of the dot. */
+    strokeWidth?: number;
+  }) {
+    super({
+      arcCenter: point,
+      radius,
+      // strokeWidth,
+      // fillOpacity,
+      color
+    });
+  }
+}
+
+export class Line extends TipableVMobject {
+  constructor(public start: Pt3, public end: Pt3) {
+    super({}, {start, end});
+  }
+
+  generatePoints() {
+    this.points = [this.start, this.end];
+  }
+
+  $render({svg}: {svg: SVGSVGElement}) {
+    const line = document.createElementNS(svg.namespaceURI, "line");
+    line.setAttribute("x1", String(this.start[0]));
+    line.setAttribute("y1", String(-this.start[1]));
+    line.setAttribute("x2", String(this.end[0]));
+    line.setAttribute("y2", String(-this.end[1]));
+    line.setAttribute("stroke", this.color);
+    line.setAttribute("stroke-width", String(this.strokeWidth));
+
+    svg.appendChild(line);
   }
 }
 
@@ -53,12 +148,8 @@ export class Circle extends Arc {
  * A generalized {@link Polygon}, allowing for disconnected sets of edges.
  */
 export class Polygram extends VMobject {
-  /** The color of the {@link Polygram}. */
-  color: string;
-
-  constructor({color = BLUE} = {}) {
-    super();
-    this.color = color;
+  constructor(kwargs: ConstructorParameters<typeof VMobject>[0] = {}) {
+    super(kwargs);
   }
 }
 
@@ -66,7 +157,9 @@ export class Polygram extends VMobject {
  * A shape consisting of one closed loop of vertices.
  */
 export class Polygon extends Polygram {
-
+  constructor(kwargs: ConstructorParameters<typeof Polygram>[0] = {}) {
+    super(kwargs);
+  }
 }
 
 /** A quadrilateral with two sets of parallel sides. */
@@ -92,13 +185,24 @@ export class Rectangle extends Polygon {
     this.width = width;
   }
 
-  render() {
-    return (<rect key={this.key} x={this.points[0] - this.width / 2} y={-this.height / 2 -this.points[1]} height={this.height} width={this.width} fill={this.color}/>);
+  $render({svg}: {svg: SVGSVGElement}) {
+    const rect = document.createElementNS(svg.namespaceURI, "rect") as SVGRectElement;
+    rect.setAttribute("x", String(this.points[0] - this.width / 2));
+    rect.setAttribute("y", String(-this.height / 2 -this.points[1]));
+    rect.setAttribute("height", String(this.height));
+    rect.setAttribute("width", String(this.height));
+    rect.setAttribute("fill", this.color);
+
+    svg.appendChild(rect);
   }
 }
 
 /** A {@link Polygram} with regularly spaced vertices. */
-export class RegularPolygram extends Polygram {}
+export class RegularPolygram extends Polygram {
+  constructor(kwargs: ConstructorParameters<typeof Polygram>[0]) {
+    super(kwargs);
+  }
+}
 
 /** An n-sided regular {@link Polygon}. */
 export class RegularPolygon extends RegularPolygram {
@@ -107,13 +211,13 @@ export class RegularPolygon extends RegularPolygram {
 
   constructor({n = 6, ...kwargs}: {
     n?: number;
-  } & ConstructorParameters<typeof Polygram>[0] = {}) {
+  } & ConstructorParameters<typeof Mobject>[0] = {}) {
     super(kwargs);
     this.n = n;
   }
 
-  render() {
-    const [cx, cy] = this.points;
+  $render({svg}: {svg: SVGSVGElement}) {
+    const [cx, cy] = this.points[0];
     const radius = 1;
     const startAngle = TWOPI/4;
     let d = `M ${cx + radius * Math.cos(startAngle)} ${-cy -radius * Math.sin(startAngle)}`;
@@ -122,7 +226,11 @@ export class RegularPolygon extends RegularPolygram {
       d += `L ${cx + radius * Math.cos(angle)} ${-cy -radius * Math.sin(angle)}`;
     }
     d += ` z`;
-    return (<path key={this.key} d={d} fill={this.color}/>)
+
+    const path = document.createElementNS(svg.namespaceURI, "path") as SVGPathElement;
+    path.setAttribute("d", d);
+    path.setAttribute("fill", this.color);
+    svg.appendChild(path);
   }
 }
 
