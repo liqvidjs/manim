@@ -87,5 +87,4 @@ export class Tex extends Mobject {
       top: `calc(50% - ${rect.height / prect.height / 2 * 100}% + ${-center[1] * 10}%)`
     });
   }
-  }
 }
